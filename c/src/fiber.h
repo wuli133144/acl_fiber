@@ -6,16 +6,28 @@
 #include "event.h"
 
 #ifdef ACL_ARM_LINUX
+
+
+/*
+* 上下文切换
+* 
+* 参考我的其他的测试记录
+* */
 extern int getcontext(ucontext_t *ucp);
 extern int setcontext(const ucontext_t *ucp);
 extern int swapcontext(struct ucontext *old_ctx, struct ucontext *new_ctx);
 extern void makecontext(ucontext_t *ucp, void (*func)(), int argc, ...);
 #endif
 
+
+/*
+* 协程的状态
+*   
+* */
 typedef enum {
-	FIBER_STATUS_READY,
-	FIBER_STATUS_RUNNING,
-	FIBER_STATUS_EXITING,
+	FIBER_STATUS_READY,    //运行就绪
+	FIBER_STATUS_RUNNING,  //运行 
+	FIBER_STATUS_EXITING,  //退出
 } fiber_status_t;
 
 typedef struct {
@@ -35,12 +47,19 @@ typedef struct FIBER_BASE {
 	ACL_RING mutex_waiter;
 } FIBER_BASE;
 
+
+/*
+* 协程结构体
+*
+* */
 struct ACL_FIBER {
 	FIBER_BASE     base;
 #ifdef USE_VALGRIND
 	unsigned int   vid;
 #endif
+    //协程状态
 	fiber_status_t status;
+    //环形链表
 	ACL_RING       me;
 	unsigned       id;
 	unsigned       slot;
@@ -66,11 +85,17 @@ struct ACL_FIBER {
 	sigjmp_buf     env;
 # endif
 #endif
+    //上下文
 	ucontext_t    *context;
+    //回调函数
 	void         (*fn)(ACL_FIBER *, void *);
+    //参数
 	void          *arg;
+    //计时器处理函数 
 	void         (*timer_fn)(ACL_FIBER *, void *);
+    //协程堆栈大小
 	size_t         size;
+    //缓存
 	char          *buff;
 };
 
